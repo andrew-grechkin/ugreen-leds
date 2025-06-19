@@ -1,0 +1,53 @@
+# Maintainer: Andrew Grechkin <andrew.grechkin@gmail.com>
+# shellcheck disable=SC2034,SC2154,SC2164
+
+_name=ugreen-leds
+pkgname=("$_name-dkms" "$_name-utils")
+pkgver=v0.4.0
+pkgrel=1
+pkgdesc="ugreen-leds"
+arch=('x86_64')
+url="https://github.com/andrew-grechkin/ugreen-leds"
+license=('GPL')
+depends=('i2c-tools')
+makedepends=('make' 'git')
+source=("git+https://github.com/andrew-grechkin/ugreen-leds")
+sha256sums=('SKIP')
+options=('!debug')
+
+pkgver() {
+	cd "$_name"
+	# git describe --tags | sed 's/-/+/g'
+	echo "v0.4.0"
+}
+
+package_ugreen-leds-dkms() {
+	pkgdesc+=" – module sources"
+	depends=(dkms smartmontools)
+	provides=(UGREEN-LEDS-MODULE)
+	cd "$_name"
+	cd "kmod"
+	install -Dm644 led-ugreen.h led-ugreen.c dkms.conf Makefile -t "$pkgdir"/usr/src/ugreen-led-0.1/
+	install -Dm644 dkms.conf "$pkgdir"/etc/modules-load.d/led-ugreen.conf
+	echo $'led-ugreen\nledtrig-oneshot\nledtrig-netdev' > "$pkgdir"/etc/modules-load.d/led-ugreen.conf
+}
+
+package_ugreen-leds-utils() {
+	pkgdesc+=" – utilities only"
+	depends=(UGREEN-LEDS-MODULE)
+	cd "$_name"
+	(cd "scripts"; g++ -std=c++17 -O2 blink-disk.cpp -o ugreen-blink-disk)
+	(cd "scripts"; g++ -std=c++17 -O2 check-standby.cpp -o ugreen-check-standby)
+
+	install -Dm644 scripts/systemd/*            -t "$pkgdir/usr/lib/systemd/system/"
+	install -Dm755 scripts/ugreen-diskiomon     -t "$pkgdir/usr/bin/"
+	install -Dm755 scripts/ugreen-netdevmon     -t "$pkgdir/usr/bin/"
+	install -Dm755 scripts/ugreen-power-led     -t "$pkgdir/usr/bin/"
+	install -Dm755 scripts/ugreen-probe-leds    -t "$pkgdir/usr/bin/"
+	install -Dm755 scripts/ugreen-blink-disk    -t "$pkgdir/usr/bin/"
+	install -Dm755 scripts/ugreen-check-standby -t "$pkgdir/usr/bin/"
+	install -Dm644 scripts/ugreen-leds.conf     -t "$pkgdir/usr/lib/ugreen/"
+
+	(cd cli && make DESTDIR="$pkgdir" PREFIX="/usr")
+	install -Dm755 cli/ugreen_leds_cli          -t "$pkgdir/usr/bin/"
+}

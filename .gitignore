@@ -1,3 +1,5 @@
+/build-scripts/arch/*
+!/build-scripts/arch/PKGBUILD
 *.o
 dx4600_leds_cli
 ugreen_leds_cli
