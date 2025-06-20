@@ -34,12 +34,14 @@ package_ugreen-leds-dkms() {
 
 package_ugreen-leds-utils() {
 	pkgdesc+=" – utilities only"
-	depends=(UGREEN-LEDS-MODULE)
+	depends=(UGREEN-LEDS-MODULE 'dmidecode')
 	cd "$_name"
 	(cd "scripts"; g++ -std=c++17 -O2 blink-disk.cpp -o ugreen-blink-disk)
 	(cd "scripts"; g++ -std=c++17 -O2 check-standby.cpp -o ugreen-check-standby)
 
 	install -Dm644 scripts/systemd/*            -t "$pkgdir/usr/lib/systemd/system/"
+	install -Dm755 scripts/ugreen-disk-enum     -t "$pkgdir/usr/bin/"
+	install -Dm755 scripts/ugreen-disk-enum-ata -t "$pkgdir/usr/bin/"
 	install -Dm755 scripts/ugreen-diskiomon     -t "$pkgdir/usr/bin/"
 	install -Dm755 scripts/ugreen-netdevmon     -t "$pkgdir/usr/bin/"
 	install -Dm755 scripts/ugreen-power-led     -t "$pkgdir/usr/bin/"

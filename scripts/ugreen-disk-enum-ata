@@ -1,0 +1,24 @@
+#!/usr/bin/env bash
+
+set -Eeuo pipefail
+
+declare -A map_ata=(
+	["disk1"]="ata1"
+	["disk2"]="ata2"
+	["disk3"]="ata3"
+	["disk4"]="ata4"
+	["disk5"]="ata5"
+	["disk6"]="ata6"
+	["disk7"]="ata7"
+	["disk8"]="ata8"
+	["disk9"]="ata9"
+)
+
+if devices=$(find /sys/block -type l -exec realpath {} \+ | grep -Po '.*?\/\Kata\d+.*' 2>/dev/null | sort -u); then
+	for led in "${!map_ata[@]}"; do
+		ata="${map_ata[$led]}"
+		if dev=$(<<<"$devices" grep -F "$ata/" 2>/dev/null | grep -Po '.*\/\K.*$' 2>/dev/null); then
+			printf $'%s\t%s\t%s\n' "$led" "$dev" "$ata"
+		fi
+	done
+fi | sort
