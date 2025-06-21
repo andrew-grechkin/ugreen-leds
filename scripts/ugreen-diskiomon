@@ -4,19 +4,24 @@ set -Eeuo pipefail
 
 # shellcheck disable=SC1091
 
-lock_app="/var/run/ugreen-diskiomon.lock"
+app="$(basename "$0")"
+lock_app="/var/run/$app.lock"
 
 if [[ -f "$lock_app" ]]; then
-	echo "$(basename "$0") is already running, exiting"
+	echo "$app is already running, exiting"
 	exit 1
 fi
 
-exit-ugreen-diskiomon() {
-	rm -f "$lock_app"
+exit-app() {
+	set +e
+	rm -fv -- "$lock_app"
 	[[ -n "${disk_online_check_pid:-}" ]] && kill "$disk_online_check_pid"
 	[[ -n "${smart_check_pid:-}" ]]       && kill "$smart_check_pid"
 	[[ -n "${standby_checker_pid:-}" ]]   && kill "$standby_checker_pid"
-} 2>/dev/null; trap 'exit-ugreen-diskiomon' EXIT
+}
+
+trap 'exit 143' TERM # systemd might send SIGTERM twice if it's not caught explicitly
+trap 'exit-app' EXIT
 
 touch "$lock_app"
 
